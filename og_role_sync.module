@@ -1,0 +1,119 @@
+<?php
+
+/**
+ * @file
+ * Syncs site roles with OG roles.
+ *
+ * Use cases:
+ *  1. You have a site role "Group admin" and an OG role "Organization admin".
+ *  When a user is granted the role organiztion admin for a group, you want
+ *  to also give it the "Group admin" role.
+ *
+ *  2. When a user is revoked the role "Organization admin", if user has no role
+ * "Organization admin" across all groups, you want to remove the site role
+ * "Group admin".
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function og_role_sync_menu() {
+  $items = array();
+
+  $items['admin/config/group/role_sync'] = array(
+    'title' => 'OG role sync',
+    'description' => 'Administer OG role sync.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('og_role_sync_admin_settings_form'),
+    'access arguments' => array('administer group'),
+    'file' => 'og_role_sync.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_og_role_grant().
+ */
+function og_role_sync_og_role_grant($entity_type, $gid, $uid, $rid) {
+  // When an OG role is granted, sync with site roles.
+  og_role_sync_sync_roles($uid, $rid);
+}
+
+/**
+ * Implements hook_og_role_revoke().
+ */
+function og_role_sync_og_role_revoke($entity_type, $gid, $uid, $rid) {
+  // When an OG role is revoked, sync with site roles.
+  og_role_sync_sync_roles($uid, $rid, 'revoke');
+}
+
+/**
+ * Syncs a user's og roles with site roles.
+ *
+ * @param int $uid
+ *   The uid of the user.
+ * @param int $og_rid
+ *   The OG role id.
+ */
+function og_role_sync_sync_roles($uid, $og_rid, $action = 'grant') {
+  $og_role_sync_roles = og_role_sync_get_roles_to_sync();
+  $user = user_load($uid);
+
+  // If og role is set to be synced, sync it.
+  foreach ($og_role_sync_roles as $site_rid => $og_rids) {
+    if (in_array($og_rid, $og_rids)) {
+      $site_role = user_role_load($site_rid);
+
+      // If action is grant, add new user role.
+      if ($action == 'grant') {
+        $roles = $user->roles + array($site_role->rid => $site_role->name);
+      }
+
+      // If action is revoke, remove user role.
+      if ($action == 'revoke') {
+        $roles = $user->roles;
+        if (isset($roles[$site_rid])) {
+          unset($roles[$site_rid]);
+        }
+      }
+
+      // Save user's new roles.
+      user_save($user, array('roles' => $roles));
+    }
+  }
+}
+
+/**
+ * Returns an array of roles that should be synced.
+ */
+function og_role_sync_get_roles_to_sync() {
+  $og_role_sync_settings = variable_get('og_role_sync_settings');
+  return array_filter(array_map('array_filter', $og_role_sync_settings));
+}
+
+/**
+ * Returns an array of all OG roles.
+ *
+ * @param bool $options
+ *   Set to TRUE if you want the results to be return as an options-ready array.
+ *
+ * @return mixed
+ *   An array of og roles.
+ */
+function og_role_sync_get_all_og_roles($options = FALSE) {
+  $results = db_select('og_role', 'ogr')
+    ->fields('ogr', array('rid', 'group_type', 'group_bundle', 'name'))
+    ->execute()
+    ->fetchAllAssoc('rid');
+
+  if ($options) {
+    $roles = array();
+    foreach ($results as $result) {
+      $roles[$result->rid] = $result->name;
+    }
+    return $roles;
+  }
+
+  return $results;
+}
