@@ -62,24 +62,29 @@ function og_role_sync_sync_roles($uid, $og_rid, $action = 'grant') {
 
   // If og role is set to be synced, sync it.
   foreach ($og_role_sync_roles as $site_rid => $og_rids) {
+    $og_rids = $og_rids['og_rids'];
     if (in_array($og_rid, $og_rids)) {
       $site_role = user_role_load($site_rid);
 
       // If action is grant, add new user role.
       if ($action == 'grant') {
-        $roles = $user->roles + array($site_role->rid => $site_role->name);
+        if (!isset($user->roles[$site_role->rid])) {
+          $roles = $user->roles + array($site_role->rid => $site_role->name);
+          user_save($user, array('roles' => $roles));
+        }
       }
 
       // If action is revoke, remove user role.
       if ($action == 'revoke') {
-        $roles = $user->roles;
-        if (isset($roles[$site_rid])) {
-          unset($roles[$site_rid]);
+        // If user does not have this OG role in other groups, we remove it.
+        if (!og_role_sync_user_has_group_role($uid, $og_rid)) {
+          $roles = $user->roles;
+          if (isset($roles[$site_rid])) {
+            unset($roles[$site_rid]);
+            user_save($user, array('roles' => $roles));
+          }
         }
       }
-
-      // Save user's new roles.
-      user_save($user, array('roles' => $roles));
     }
   }
 }
@@ -116,4 +121,24 @@ function og_role_sync_get_all_og_roles($options = FALSE) {
   }
 
   return $results;
+}
+
+/**
+ * Helper function to check if a user has a role irrespective of group id.
+ *
+ * @param int $uid
+ *   The user id
+ * @param int $og_rid
+ *   The og role id.
+ */
+function og_role_sync_user_has_group_role($uid, $og_rid) {
+  $result = db_select('og_users_roles', 'our')
+    ->fields('our', array('rid'))
+    ->condition('uid', $uid)
+    ->condition('rid', $og_rid)
+    ->range(0, 1)
+    ->execute()
+    ->rowCount();
+
+  return ($result > 0);
 }

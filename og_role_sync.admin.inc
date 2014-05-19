@@ -18,19 +18,19 @@ function og_role_sync_admin_settings_form($form, &$form_state) {
   );
 
   foreach ($site_roles as $site_rid => $site_role) {
-    $form['og_role_sync_settings'][$site_role] = array(
+    $form['og_role_sync_settings'][$site_rid] = array(
       '#type' => 'fieldset',
       '#title' => $site_role,
       '#collapsed' => ($site_rid == 1 || $site_rid == 2),
       '#collapsible' => TRUE,
     );
-    $form['og_role_sync_settings'][$site_role][$site_rid] = array(
+    $form['og_role_sync_settings'][$site_rid]['og_rids'] = array(
       '#title' => t('Sync the role %site_role with the following OG roles', array(
         '%site_role' => $site_role,
       )),
       '#type' => 'checkboxes',
       '#options' => $og_roles,
-      '#default_value' => !empty($og_role_sync_settings[$site_rid]) ? $og_role_sync_settings[$site_rid] : array(),
+      '#default_value' => !empty($og_role_sync_settings[$site_rid]['og_rids']) ? $og_role_sync_settings[$site_rid]['og_rids'] : array(),
     );
   }
 
