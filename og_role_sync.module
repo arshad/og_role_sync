@@ -45,7 +45,10 @@ function og_role_sync_og_role_grant($entity_type, $gid, $uid, $rid) {
  */
 function og_role_sync_og_role_revoke($entity_type, $gid, $uid, $rid) {
   // When an OG role is revoked, sync with site roles.
-  og_role_sync_sync_roles($uid, $rid, 'revoke');
+  $group = node_load($gid);
+  if ($group->status == 1) {
+    og_role_sync_sync_roles($uid, $rid, 'revoke');
+  }
 }
 
 /**
