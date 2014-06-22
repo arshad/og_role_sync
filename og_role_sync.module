@@ -59,6 +59,8 @@ function og_role_sync_og_role_revoke($entity_type, $gid, $uid, $rid) {
  *   The uid of the user.
  * @param int $og_rid
  *   The OG role id.
+ * @param string $action
+ *  The action to use when sync, one of 'grant' or 'revoke'.
  */
 function og_role_sync_sync_roles($uid, $og_rid, $action = 'grant') {
   $og_role_sync_roles = og_role_sync_get_roles_to_sync();
