@@ -5,9 +5,10 @@
  * Syncs site roles with OG roles.
  *
  * Use cases:
- *  1. You have a site role "Group admin" and an OG role "Organization admin".
- *  When a user is granted the role organization admin for a group, you want
- *  to also give it the "Group admin" role.
+ *  You have a site role "Group admin" and an OG role "Organization admin".
+ *
+ *  1. When a user is granted the role organization admin for a group, you want
+ *  to also give it the "Group admin" role (if the group is published).
  *
  *  2. When a user is revoked the role "Organization admin", if user has no role
  * "Organization admin" across all groups, you want to remove the site role
