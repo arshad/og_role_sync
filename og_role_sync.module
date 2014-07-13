@@ -138,6 +138,8 @@ function og_role_sync_get_all_og_roles($options = FALSE) {
  *   The user id
  * @param int $og_rid
  *   The og role id.
+ *
+ * @return bool
  */
 function og_role_sync_user_has_group_role($uid, $og_rid) {
   $result = db_select('og_users_roles', 'our')
