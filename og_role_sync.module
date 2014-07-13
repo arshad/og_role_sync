@@ -72,25 +72,27 @@ function og_role_sync_sync_roles($uid, $og_rid, $action = 'grant') {
     if (in_array($og_rid, $og_rids)) {
       $site_role = user_role_load($site_rid);
 
-      // If action is grant, add new user role.
-      if ($action == 'grant') {
-        if (!isset($user->roles[$site_role->rid])) {
-          $roles = $user->roles + array($site_role->rid => $site_role->name);
-          user_save($user, array('roles' => $roles));
-        }
-      }
-
-      // If action is revoke, remove user role.
-      if ($action == 'revoke') {
-        // If user does not have this OG role in other groups, we remove it.
-        if (!og_role_sync_user_has_group_role($uid, $og_rid)) {
-          $roles = $user->roles;
-          if (isset($roles[$site_rid])) {
-            unset($roles[$site_rid]);
+      switch ($action) {
+        // If action is grant, add new user role.
+        case 'grant':
+          if (!isset($user->roles[$site_role->rid])) {
+            $roles = $user->roles + array($site_role->rid => $site_role->name);
             user_save($user, array('roles' => $roles));
           }
-        }
+          break;
+        // If action is revoke, remove user role.
+        case 'revoke':
+          // If user does not have this OG role in other groups, we remove it.
+          if (!og_role_sync_user_has_group_role($uid, $og_rid)) {
+            $roles = $user->roles;
+            if (isset($roles[$site_rid])) {
+              unset($roles[$site_rid]);
+              user_save($user, array('roles' => $roles));
+            }
+          }
+          break;
       }
+
     }
   }
 }
